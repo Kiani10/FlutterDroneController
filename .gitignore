@@ -1,0 +1,68 @@
+# Flutter/Dart/Pub related files
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+
+# Android specific files
+android/.gradle/
+android/.idea/
+android/captures/
+android/.settings/
+android/local.properties
+android/app/proguard-rules.pro
+android/app/build/
+
+# iOS specific files
+ios/Flutter/.last_build_id
+ios/Pods/
+ios/Runner.xcworkspace/
+ios/Runner.xcodeproj/project.xcworkspace/
+ios/Flutter/Generated.xcconfig
+ios/Flutter/Flutter.framework/
+ios/.generated/
+ios/Flutter/Debug.xcconfig
+ios/Flutter/Release.xcconfig
+ios/Podfile.lock
+
+# macOS specific files
+macos/Flutter/ephemeral/
+macos/Flutter/Flutter.podspec
+macos/Pods/
+macos/.generated/
+
+# Web specific files
+web/.dart_tool/
+
+# Windows specific files
+windows/.dart_tool/
+windows/Flutter/ephemeral/
+
+# Linux specific files
+linux/.dart_tool/
+linux/Flutter/ephemeral/
+
+# Coverage folder
+coverage/
+
+# Miscellaneous
+*.lock
+*.log
+.idea/
+.vscode/
+*.iml
+*.apk
+*.crash
+*.key
+*.pem
+*.cert
+*.p12
+
+# Build files
+build/
+.flutter_build/
+
+# JetBrains Rider temp files
+.idea/
