@@ -1,6 +1,8 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'map_screen.dart'; // Import the MapScreen for selecting a location
 
 class AddStationScreen extends StatefulWidget {
   const AddStationScreen({super.key});
@@ -10,14 +12,32 @@ class AddStationScreen extends StatefulWidget {
 }
 
 class _AddStationScreenState extends State<AddStationScreen> {
-  final ImagePicker _picker = ImagePicker();
-  XFile? _pickedImage;
+  LatLng? _selectedLocation; // Variable to store selected location
+  final ImagePicker _picker = ImagePicker(); // Image picker instance
+  XFile? _pickedImage; // To store picked image
 
   Future<void> _getImageFromGallery() async {
+    // Function to select image from gallery
     final pickedImage = await _picker.pickImage(source: ImageSource.gallery);
     if (pickedImage != null) {
       setState(() {
         _pickedImage = pickedImage;
+      });
+    }
+  }
+
+  Future<void> _selectLocationOnMap() async {
+    // Navigate to MapScreen and get the selected location
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => MapScreen(), // Open map to select a location
+      ),
+    );
+
+    if (result != null) {
+      setState(() {
+        _selectedLocation = result; // Save the selected location
       });
     }
   }
@@ -34,7 +54,6 @@ class _AddStationScreenState extends State<AddStationScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                //Icon(Icons.air, color: Colors.amber[800], size: 30),
                 Image.asset(
                   'assets/images/Hellipad.png',
                   height: 70,
@@ -52,7 +71,7 @@ class _AddStationScreenState extends State<AddStationScreen> {
               ],
             ),
             SizedBox(height: 20),
-            // Station Name text field
+            // Station Name Text Field
             TextField(
               decoration: InputDecoration(
                 labelText: 'Station Name',
@@ -60,7 +79,7 @@ class _AddStationScreenState extends State<AddStationScreen> {
               ),
             ),
             SizedBox(height: 20),
-            // Location label and button
+            // Select Location Row
             Row(
               children: [
                 Icon(Icons.location_on, color: Colors.amber[800]),
@@ -77,9 +96,8 @@ class _AddStationScreenState extends State<AddStationScreen> {
                 ),
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: () {
-                      // Implement location selection logic
-                    },
+                    onPressed:
+                        _selectLocationOnMap, // Open Google Map to select location
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.amber[800],
                       shape: RoundedRectangleBorder(
@@ -88,15 +106,24 @@ class _AddStationScreenState extends State<AddStationScreen> {
                       padding: EdgeInsets.symmetric(vertical: 12),
                     ),
                     child: Text(
-                      'Select',
+                      _selectedLocation == null
+                          ? 'Select'
+                          : 'Selected', // Change button text if location is selected
                       style: TextStyle(fontSize: 16, color: Colors.white),
                     ),
                   ),
                 ),
               ],
             ),
+            SizedBox(height: 10),
+            // Display selected latitude and longitude
+            if (_selectedLocation != null)
+              Text(
+                'Location Selected: Lat: ${_selectedLocation!.latitude}, Lng: ${_selectedLocation!.longitude}',
+                style: TextStyle(fontSize: 16, color: Colors.amber[800]),
+              ),
             SizedBox(height: 20),
-            // Launching Pad label and button
+            // Launching Pad label and Browse Button
             Row(
               children: [
                 Icon(Icons.flight_takeoff, color: Colors.amber[800]),
@@ -113,7 +140,7 @@ class _AddStationScreenState extends State<AddStationScreen> {
                 ),
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: _getImageFromGallery,
+                    onPressed: _getImageFromGallery, // Pick image from gallery
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.amber[800],
                       shape: RoundedRectangleBorder(
@@ -131,7 +158,7 @@ class _AddStationScreenState extends State<AddStationScreen> {
             ),
             SizedBox(height: 20),
             // Preview selected image
-            if (_pickedImage != null) ...[
+            if (_pickedImage != null)
               ClipRRect(
                 borderRadius: BorderRadius.circular(15),
                 child: Image.file(
@@ -140,12 +167,20 @@ class _AddStationScreenState extends State<AddStationScreen> {
                   height: 200,
                 ),
               ),
-              SizedBox(height: 20),
-            ],
+            SizedBox(height: 20),
             // Add Station button
             ElevatedButton(
               onPressed: () {
-                // Implement station addition logic
+                // Handle adding the station with the selected location and image
+                if (_selectedLocation != null) {
+                  print(
+                      'Location Selected: Lat: ${_selectedLocation!.latitude}, Lng: ${_selectedLocation!.longitude}');
+                  if (_pickedImage != null) {
+                    print('Image Selected: ${_pickedImage!.path}');
+                  }
+                } else {
+                  print('No location selected');
+                }
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.amber[800],
