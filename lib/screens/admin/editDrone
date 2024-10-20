@@ -1,0 +1,176 @@
+import 'package:flutter/material.dart';
+import 'dart:convert'; // For encoding the data
+import 'package:dronecontroller/API/api_handler.dart'; // Import the API class
+
+class EditDroneScreen extends StatefulWidget {
+  final Map<String, dynamic> drone;
+
+  const EditDroneScreen({super.key, required this.drone});
+
+  @override
+  _EditDroneScreenState createState() => _EditDroneScreenState();
+}
+
+class _EditDroneScreenState extends State<EditDroneScreen> {
+  late TextEditingController _nameController;
+  late TextEditingController _ceilingController;
+  late TextEditingController _speedController;
+  late TextEditingController _batteryController;
+  late TextEditingController _payloadController;
+  final API api = API(); // Instance of your API handler
+  bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController = TextEditingController(text: widget.drone['name']);
+    _ceilingController = TextEditingController(text: widget.drone['ceiling']);
+    _speedController = TextEditingController(text: widget.drone['speed']);
+    _batteryController = TextEditingController(text: widget.drone['battery']);
+    _payloadController = TextEditingController(text: widget.drone['payload']);
+  }
+
+  // Function to update drone
+  Future<void> _updateDrone() async {
+    setState(() {
+      _isLoading = true; // Show loading indicator
+    });
+
+    // Prepare drone data
+    Map<String, dynamic> updatedDroneData = {
+      'name': _nameController.text,
+      'ceiling': _ceilingController.text,
+      'speed': _speedController.text,
+      'battery': _batteryController.text,
+      'payload': _payloadController.text,
+    };
+
+    try {
+      // Call API to update drone information
+      var response = await api.updateDrone(int.parse(widget.drone['id']), updatedDroneData);
+
+      if (response.statusCode == 200) {
+        // Success - you can show a success message and navigate back
+        print('Drone updated successfully');
+        _showSuccessDialog('Drone updated successfully.');
+      } else {
+        // Handle failure
+        print('Failed to update drone');
+        _showErrorDialog('Failed to update drone. Please try again.');
+      }
+    } catch (e) {
+      print('Error: $e');
+      _showErrorDialog('An error occurred while updating the drone.');
+    } finally {
+      setState(() {
+        _isLoading = false; // Hide loading indicator
+      });
+    }
+  }
+
+  // Show success dialog
+  void _showSuccessDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Success'),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              Navigator.of(context).pop(); // Go back to the previous screen
+            },
+            child: Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Show error dialog
+  void _showErrorDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Error'),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+            child: Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Edit Drone'),
+        backgroundColor: Colors.amber[800],
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              _buildTextField('Drone Name', _nameController),
+              SizedBox(height: 10),
+              _buildTextField('Ceiling (meters)', _ceilingController,
+                  keyboardType: TextInputType.number),
+              SizedBox(height: 10),
+              _buildTextField('Speed (km/h)', _speedController,
+                  keyboardType: TextInputType.number),
+              SizedBox(height: 10),
+              _buildTextField('Battery Life (hours)', _batteryController,
+                  keyboardType: TextInputType.number),
+              SizedBox(height: 10),
+              _buildTextField('Payload Capacity (kg)', _payloadController,
+                  keyboardType: TextInputType.number),
+              SizedBox(height: 20),
+              _isLoading
+                  ? CircularProgressIndicator() // Show loading indicator while updating
+                  : ElevatedButton(
+                      onPressed: _updateDrone,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.amber[800],
+                        padding: EdgeInsets.symmetric(
+                          vertical: 15,
+                          horizontal:20,
+                          ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(80),
+                        ),
+                      ),
+                      child: Text(
+                        'Update Drone',
+                        style: TextStyle(fontSize: 18, color: Colors.black),
+                      ),
+                    ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Helper method to build text fields
+  Widget _buildTextField(String label, TextEditingController controller,
+      {TextInputType keyboardType = TextInputType.text}) {
+    return TextField(
+      controller: controller,
+      decoration: InputDecoration(
+        labelText: label,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+      ),
+      keyboardType: keyboardType,
+    );
+  }
+}

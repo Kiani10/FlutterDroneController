@@ -161,13 +161,48 @@ class API {
     return response;
   }
 
-  Future<http.Response> createMission(Map<String, dynamic> missionData) async {
+  // Future<http.Response> createMission(
+  //     Map<String, dynamic> missionData, File? image) async {
+  //   String url = '$_baseUrl/mission';
+  //   var response = await http.post(
+  //     Uri.parse(url),
+  //     body: jsonEncode(missionData),
+  //     headers: {"Content-Type": "application/json"},
+  //   );
+  //   return response;
+  // }
+
+  Future<http.Response> createMission(
+      Map<String, dynamic> missionData, File? image) async {
     String url = '$_baseUrl/mission';
-    var response = await http.post(
-      Uri.parse(url),
-      body: jsonEncode(missionData),
-      headers: {"Content-Type": "application/json"},
-    );
+
+    // Create a Multipart request
+    var request = http.MultipartRequest('POST', Uri.parse(url));
+
+    // Add the mission data fields
+    request.fields['mission_datetime'] = missionData['mission_datetime'];
+    request.fields['location_pad'] = missionData['location_pad'];
+    request.fields['drone_id'] = missionData['drone_id'].toString();
+
+    // Add the coordinates if they exist
+    List<dynamic> coordinates = missionData['coordinates'];
+    for (int i = 0; i < coordinates.length; i++) {
+      request.fields['coordinates[$i][latitude]'] =
+          coordinates[i]['latitude'].toString();
+      request.fields['coordinates[$i][longitude]'] =
+          coordinates[i]['longitude'].toString();
+    }
+
+    // Add the image file to the request if it exists
+    if (image != null) {
+      var imageFile = await http.MultipartFile.fromPath('img', image.path);
+      request.files.add(imageFile);
+    }
+
+    // Send the request and get the response
+    var streamedResponse = await request.send();
+    var response = await http.Response.fromStream(streamedResponse);
+
     return response;
   }
 
@@ -244,15 +279,69 @@ class API {
     return response;
   }
 
+  // Future<http.Response> updateStation(
+  //     int stationId, Map<String, dynamic> stationData,
+  //     [File? file]) async {
+  //   String url = '$_baseUrl/station/$stationId';
+
+  //   if (file != null) {
+  //     // If a file is provided, use MultipartRequest for image upload
+  //     var request = http.MultipartRequest('PUT', Uri.parse(url));
+
+  //     // Add the station data as fields in the multipart request
+  //     request.fields['station_name'] = stationData['station_name'];
+  //     request.fields['latitude'] = stationData['latitude'].toString();
+  //     request.fields['longitude'] = stationData['longitude'].toString();
+
+  //     // Attach the image file
+  //     var imageFile =
+  //         await http.MultipartFile.fromPath('location_pad_img', file.path);
+  //     request.files.add(imageFile);
+
+  //     // Send the multipart request and await the response
+  //     var streamedResponse = await request.send();
+  //     return await http.Response.fromStream(streamedResponse);
+  //   } else {
+  //     // If no image file is provided, send a simple PUT request with JSON body
+  //     var response = await http.put(
+  //       Uri.parse(url),
+  //       body: jsonEncode(stationData),
+  //       headers: {"Content-Type": "application/json"},
+  //     );
+  //     return response;
+  //   }
+  // }
   Future<http.Response> updateStation(
-      int stationId, Map<String, dynamic> stationData) async {
+      int stationId, Map<String, dynamic> stationData,
+      [File? file]) async {
     String url = '$_baseUrl/station/$stationId';
-    var response = await http.put(
-      Uri.parse(url),
-      body: jsonEncode(stationData),
-      headers: {"Content-Type": "application/json"},
-    );
-    return response;
+
+    if (file != null) {
+      // If a file is provided, use MultipartRequest for image upload
+      var request = http.MultipartRequest('PUT', Uri.parse(url));
+
+      // Add the station data as fields in the multipart request
+      stationData.forEach((key, value) {
+        request.fields[key] = value.toString();
+      });
+
+      // Attach the image file
+      var imageFile =
+          await http.MultipartFile.fromPath('location_pad_img', file.path);
+      request.files.add(imageFile);
+
+      // Send the multipart request and await the response
+      var streamedResponse = await request.send();
+      return await http.Response.fromStream(streamedResponse);
+    } else {
+      // If no image file is provided, send a simple PUT request with JSON body
+      var response = await http.put(
+        Uri.parse(url),
+        body: jsonEncode(stationData),
+        headers: {"Content-Type": "application/json"},
+      );
+      return response;
+    }
   }
 
   Future<http.Response> deleteStation(int stationId) async {

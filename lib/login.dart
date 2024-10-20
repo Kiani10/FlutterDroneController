@@ -1,6 +1,7 @@
 import 'dart:convert'; // For jsonDecode
 import 'package:dronecontroller/API/api_handler.dart';
 import 'package:dronecontroller/screens/admin/dashboard.dart';
+import 'package:dronecontroller/screens/operator/dashboard.dart';
 import 'package:flutter/material.dart';
 
 class LoginPage extends StatefulWidget {
@@ -14,15 +15,27 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final API api = API(); // Instantiate your API handler class
-
   bool _isLoading = false; // Track loading state
 
+  // Function to validate if both fields are not empty
+  bool _validateFields() {
+    if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
+      _showErrorDialog('Email and password cannot be empty.');
+      return false;
+    }
+    return true;
+  }
+
+  // Function to handle login process
   Future<void> _login() async {
+    if (!_validateFields()) {
+      return; // Stop execution if validation fails
+    }
+
     setState(() {
       _isLoading = true; // Start loading
     });
 
-    // Collect email and password from the text fields
     String email = _emailController.text;
     String password = _passwordController.text;
 
@@ -35,6 +48,7 @@ class _LoginPageState extends State<LoginPage> {
         // Extract user data
         String userName = responseData['user']['name'];
         String userRole = responseData['user']['role'];
+
         // Check the role and navigate accordingly
         if (userRole == 'admin') {
           Navigator.pushReplacement(
@@ -45,55 +59,44 @@ class _LoginPageState extends State<LoginPage> {
             ),
           );
         } else if (userRole == 'operator') {
-          /*
+          debugPrint('dssdffd');
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
-              builder: (context) => OperatorDashboard(operatorName: userName), // Pass operator name
+              builder: (context) => OperatorDashboard(
+                  operatorName: userName), // Pass operator name
             ),
-          );*/
+          );
         }
       } else {
-        // Handle incorrect credentials or other errors
-        showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: Text('Login Failed'),
-            content: Text('Incorrect email or password.'),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
-                child: Text('OK'),
-              ),
-            ],
-          ),
-        );
+        _showErrorDialog('Incorrect email or password.');
       }
     } catch (e) {
-      // Handle network or API errors
-      print('Error: $e');
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: Text('Error'),
-          content: Text('An error occurred during login. Please try again.'),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: Text('OK'),
-            ),
-          ],
-        ),
-      );
+      _showErrorDialog('An error occurred during login. Please try again.');
     }
 
     setState(() {
       _isLoading = false; // Stop loading
     });
+  }
+
+  // Error dialog display function
+  void _showErrorDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Error'),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+            child: Text('OK'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
