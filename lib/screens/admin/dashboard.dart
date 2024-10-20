@@ -1,13 +1,14 @@
+import 'package:flutter/material.dart';
 import 'package:dronecontroller/screens/admin/addDrone.dart';
 import 'package:dronecontroller/screens/admin/addOperator.dart';
 import 'package:dronecontroller/screens/admin/addStation.dart';
 import 'package:dronecontroller/screens/admin/assignOperator.dart';
 import 'package:dronecontroller/screens/admin/viewDrone.dart';
 import 'package:dronecontroller/screens/admin/viewStation.dart';
-import 'package:flutter/material.dart';
 
 class AdminDashboard extends StatefulWidget {
-  const AdminDashboard({super.key});
+  final String adminName; // Pass the admin's name
+  const AdminDashboard({Key? key, required this.adminName}) : super(key: key);
 
   @override
   _AdminDashboardState createState() => _AdminDashboardState();
@@ -15,7 +16,6 @@ class AdminDashboard extends StatefulWidget {
 
 class _AdminDashboardState extends State<AdminDashboard> {
   int _selectedIndex = 0;
-  String Admin = 'Waleed';
 
   void _onItemTapped(int index) {
     setState(() {
@@ -51,7 +51,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
               Padding(
                 padding: const EdgeInsets.only(left: 10),
                 child: Text(
-                  'Welcome $Admin',
+                  'Welcome, ${widget.adminName}', // Display admin's name
                   style: TextStyle(
                     fontSize: 20,
                     color: Colors.grey[700],
@@ -75,7 +75,9 @@ class _AdminDashboardState extends State<AdminDashboard> {
                         Navigator.push(
                             context,
                             MaterialPageRoute(
-                                builder: (context) => AddStationScreen()));
+                                builder: (context) => AddStationScreen(
+                                      adminName: widget.adminName,
+                                    )));
                       },
                     ),
                     _buildFunctionalityTile(

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:http/http.dart' as http;
 
 class API {
@@ -220,13 +221,26 @@ class API {
     return response;
   }
 
-  Future<http.Response> createStation(Map<String, dynamic> stationData) async {
+  Future<http.Response> createStation(
+      Map<String, dynamic> stationData, File image) async {
     String url = '$_baseUrl/station';
-    var response = await http.post(
-      Uri.parse(url),
-      body: jsonEncode(stationData),
-      headers: {"Content-Type": "application/json"},
-    );
+
+    // Create a Multipart request
+    var request = http.MultipartRequest('POST', Uri.parse(url));
+
+    // Add the station data fields
+    request.fields['station_name'] = stationData['station_name'];
+    request.fields['latitude'] = stationData['latitude'].toString();
+    request.fields['longitude'] = stationData['longitude'].toString();
+
+    // Add the image file to the request
+    var imageFile = await http.MultipartFile.fromPath('image', image.path);
+    request.files.add(imageFile);
+
+    // Send the request and get the response
+    var streamedResponse = await request.send();
+    var response = await http.Response.fromStream(streamedResponse);
+
     return response;
   }
 

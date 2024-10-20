@@ -1,3 +1,4 @@
+import 'dart:convert'; // For jsonDecode
 import 'package:dronecontroller/API/api_handler.dart';
 import 'package:dronecontroller/screens/admin/dashboard.dart';
 import 'package:flutter/material.dart';
@@ -29,11 +30,29 @@ class _LoginPageState extends State<LoginPage> {
     try {
       var response = await api.login({'name': email, 'passwrd': password});
       if (response.statusCode == 200) {
-        // If login successful, navigate to dashboard
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => AdminDashboard()),
-        );
+        var responseData = jsonDecode(response.body); // Decode response JSON
+
+        // Extract user data
+        String userName = responseData['user']['name'];
+        String userRole = responseData['user']['role'];
+        // Check the role and navigate accordingly
+        if (userRole == 'admin') {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) =>
+                  AdminDashboard(adminName: userName), // Pass admin name
+            ),
+          );
+        } else if (userRole == 'operator') {
+          /*
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => OperatorDashboard(operatorName: userName), // Pass operator name
+            ),
+          );*/
+        }
       } else {
         // Handle incorrect credentials or other errors
         showDialog(
