@@ -22,13 +22,14 @@ class _EditStationScreenState extends State<EditStationScreen> {
       _stationNameController; // Controller for station name
   final API api = API(); // API handler instance
   bool _isLoading = false; // Loading state
+  bool _isLocationSelected = false; // Track if user selects a new location
 
   @override
   void initState() {
     super.initState();
+    // Initialize the station name and location from the passed station data
     _stationNameController =
         TextEditingController(text: widget.station['name']);
-    debugPrint(widget.station['location']);
     _selectedLocation = LatLng(
       double.parse(widget.station['location'].split(",")[0]),
       double.parse(widget.station['location'].split(",")[1]),
@@ -57,27 +58,36 @@ class _EditStationScreenState extends State<EditStationScreen> {
     if (result != null) {
       setState(() {
         _selectedLocation = result;
+        _isLocationSelected = true; // Mark that the location has been updated
       });
     }
   }
 
   // Function to update the station
   Future<void> _updateStation() async {
-    if (_stationNameController.text.isEmpty || _selectedLocation == null) {
-      _showErrorDialog('Please fill in all fields.');
+    if (_stationNameController.text.isEmpty) {
+      _showErrorDialog('Please fill in the station name.');
       return;
     }
-
     setState(() {
       _isLoading = true;
     });
 
     try {
+      // Use the current selected location or the original one if no change
+      /*
+      LatLng finalLocation = _isLocationSelected
+          ? _selectedLocation!
+          : LatLng(
+              double.parse(widget.station['location'].split(",")[0]),
+              double.parse(widget.station['location'].split(",")[1]),
+            );
+            */
       // Create station data map
       Map<String, dynamic> stationData = {
         'station_name': _stationNameController.text,
-        'latitude': _selectedLocation!.latitude,
-        'longitude': _selectedLocation!.longitude,
+        'latitude': _selectedLocation!.latitude.toString(),
+        'longitude': _selectedLocation!.longitude.toString(),
       };
 
       // Send the data to the server using the API handler
@@ -98,7 +108,7 @@ class _EditStationScreenState extends State<EditStationScreen> {
       }
     } catch (e) {
       print('Error: $e');
-      _showErrorDialog('An error occurred. Please try again.$e');
+      _showErrorDialog('An error occurred. Please try again.');
     } finally {
       setState(() {
         _isLoading = false; // Stop loading after request is complete
@@ -136,13 +146,15 @@ class _EditStationScreenState extends State<EditStationScreen> {
           TextButton(
             onPressed: () {
               Navigator.of(context).pop(); // Close the dialog
-              Navigator.pop(context, true); // Go back to the previous screen
             },
             child: Text('OK'),
           ),
         ],
       ),
-    );
+    ).then((_) {
+      // After the dialog is dismissed, navigate back to the previous screen
+      Navigator.of(context).pop();
+    });
   }
 
   @override
@@ -195,20 +207,13 @@ class _EditStationScreenState extends State<EditStationScreen> {
                           padding: EdgeInsets.symmetric(vertical: 12),
                         ),
                         child: Text(
-                          _selectedLocation == null ? 'Select' : 'Selected',
+                          _isLocationSelected ? 'Selected' : 'Select',
                           style: TextStyle(fontSize: 16, color: Colors.white),
                         ),
                       ),
                     ),
                   ],
                 ),
-                SizedBox(height: 10),
-                // Display selected latitude and longitude
-                if (_selectedLocation != null)
-                  Text(
-                    'Location Selected: Lat: ${_selectedLocation!.latitude}, Lng: ${_selectedLocation!.longitude}',
-                    style: TextStyle(fontSize: 16, color: Colors.amber[800]),
-                  ),
                 SizedBox(height: 20),
                 // Launching Pad label and Browse Button
                 Row(

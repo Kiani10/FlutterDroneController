@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:dronecontroller/API/api_handler.dart'; // Import your API handler
-import 'map_screen.dart'; // Import the MapScreen for selecting a location
+import 'package:dronecontroller/screens/admin/map_screen.dart'; // Import the MapScreen for selecting a location
 
 class AddStationScreen extends StatefulWidget {
   final String adminName; // Accept admin name as a parameter
@@ -22,6 +22,8 @@ class _AddStationScreenState extends State<AddStationScreen> {
       TextEditingController(); // Controller for station name
   final API api = API(); // API handler instance
   bool _isLoading = false; // Loading state
+  bool _isLocationSelected = false; // Track if location is selected
+  bool _isImageSelected = false; // Track if image is selected
 
   // Function to pick an image from gallery
   Future<void> _getImageFromGallery() async {
@@ -29,6 +31,7 @@ class _AddStationScreenState extends State<AddStationScreen> {
     if (pickedImage != null) {
       setState(() {
         _pickedImage = pickedImage;
+        _isImageSelected = true; // Mark image as selected
       });
     }
   }
@@ -45,6 +48,7 @@ class _AddStationScreenState extends State<AddStationScreen> {
     if (result != null) {
       setState(() {
         _selectedLocation = result;
+        _isLocationSelected = true; // Mark location as selected
       });
     }
   }
@@ -125,11 +129,7 @@ class _AddStationScreenState extends State<AddStationScreen> {
           TextButton(
             onPressed: () {
               Navigator.of(context).pop(); // Close the dialog
-              Navigator.pushReplacementNamed(
-                context,
-                '/adminDashboard',
-                arguments: {'adminName': widget.adminName}, // Pass admin name
-              ); // Navigate back to the admin dashboard
+              Navigator.pop(context);
             },
             child: Text('OK'),
           ),
@@ -181,7 +181,10 @@ class _AddStationScreenState extends State<AddStationScreen> {
                 // Select Location Row
                 Row(
                   children: [
-                    Icon(Icons.location_on, color: Colors.amber[800]),
+                    Icon(Icons.location_on,
+                        color: _isLocationSelected
+                            ? Colors.green
+                            : Colors.amber[800]),
                     SizedBox(width: 8),
                     Expanded(
                       child: Text(
@@ -189,7 +192,9 @@ class _AddStationScreenState extends State<AddStationScreen> {
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
-                          color: Colors.amber[800],
+                          color: _isLocationSelected
+                              ? Colors.green
+                              : Colors.amber[800],
                         ),
                       ),
                     ),
@@ -197,32 +202,30 @@ class _AddStationScreenState extends State<AddStationScreen> {
                       child: ElevatedButton(
                         onPressed: _selectLocationOnMap,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.amber[800],
+                          backgroundColor: _isLocationSelected
+                              ? Colors.green
+                              : Colors.amber[800],
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(30),
                           ),
                           padding: EdgeInsets.symmetric(vertical: 12),
                         ),
                         child: Text(
-                          _selectedLocation == null ? 'Select' : 'Selected',
+                          _isLocationSelected ? 'Selected' : 'Select',
                           style: TextStyle(fontSize: 16, color: Colors.white),
                         ),
                       ),
                     ),
                   ],
                 ),
-                SizedBox(height: 10),
-                // Display selected latitude and longitude
-                if (_selectedLocation != null)
-                  Text(
-                    'Location Selected: Lat: ${_selectedLocation!.latitude}, Lng: ${_selectedLocation!.longitude}',
-                    style: TextStyle(fontSize: 16, color: Colors.amber[800]),
-                  ),
                 SizedBox(height: 20),
                 // Launching Pad label and Browse Button
                 Row(
                   children: [
-                    Icon(Icons.flight_takeoff, color: Colors.amber[800]),
+                    Icon(Icons.flight_takeoff,
+                        color: _isImageSelected
+                            ? Colors.green
+                            : Colors.amber[800]),
                     SizedBox(width: 8),
                     Expanded(
                       child: Text(
@@ -230,7 +233,9 @@ class _AddStationScreenState extends State<AddStationScreen> {
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
-                          color: Colors.amber[800],
+                          color: _isImageSelected
+                              ? Colors.green
+                              : Colors.amber[800],
                         ),
                       ),
                     ),
@@ -238,31 +243,22 @@ class _AddStationScreenState extends State<AddStationScreen> {
                       child: ElevatedButton(
                         onPressed: _getImageFromGallery,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.amber[800],
+                          backgroundColor: _isImageSelected
+                              ? Colors.green
+                              : Colors.amber[800],
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(30),
                           ),
                           padding: EdgeInsets.symmetric(vertical: 12),
                         ),
                         child: Text(
-                          'Browse',
+                          _isImageSelected ? 'Selected' : 'Browse',
                           style: TextStyle(fontSize: 16, color: Colors.white),
                         ),
                       ),
                     ),
                   ],
                 ),
-                SizedBox(height: 20),
-                // Preview selected image
-                if (_pickedImage != null)
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(15),
-                    child: Image.file(
-                      File(_pickedImage!.path),
-                      fit: BoxFit.cover,
-                      height: 200,
-                    ),
-                  ),
                 SizedBox(height: 20),
                 // Add Station button
                 ElevatedButton(

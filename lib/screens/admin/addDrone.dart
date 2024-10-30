@@ -32,6 +32,26 @@ class _AddDroneScreenState extends State<AddDroneScreen> {
       var response = await api.getStations();
       if (response.statusCode == 200) {
         List<dynamic> stationList = jsonDecode(response.body);
+        if (stationList.isEmpty) {
+          //in that case we have to bounce back to the dashboard because
+          //if there are no stations then how a operator is assiged -->mean logoic is there
+          showDialog(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: Text('Error'),
+              content: Text('First add station so that you can add drone'),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop(); // Close the dialog
+                    Navigator.of(context).pop(); // Back to the dashboard
+                  },
+                  child: Text('OK'),
+                ),
+              ],
+            ),
+          );
+        }
         setState(() {
           _stations = stationList.map<Map<String, dynamic>>((station) {
             return {

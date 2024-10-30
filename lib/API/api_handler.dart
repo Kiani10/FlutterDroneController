@@ -3,14 +3,14 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 
 class API {
+  //final String _baseUrl = "http://192.168.18.87:5000";
   final String _baseUrl = "http://192.168.100.11:5000";
 
   // ==========================
   // User Routes
-  // ==========================
-
+  // =========================
   Future<http.Response> login(Map<String, dynamic> credentials) async {
-    String url = '$_baseUrl/user/login'; // Use your actual login route
+    String url = '$_baseUrl/user/login';
     var response = await http.post(
       Uri.parse(url),
       body: jsonEncode(credentials),
@@ -118,6 +118,12 @@ class API {
     return response;
   }
 
+  Future<http.Response> getSpecificDrones(int operatorId) async {
+    String url = '$_baseUrl/drones/specific/$operatorId';
+    var response = await http.get(Uri.parse(url));
+    return response;
+  }
+
   Future<http.Response> createDrone(Map<String, dynamic> droneData) async {
     String url = '$_baseUrl/drone';
     var response = await http.post(
@@ -149,8 +155,8 @@ class API {
   // Mission Routes
   // ==========================
 
-  Future<http.Response> getMissions() async {
-    String url = '$_baseUrl/missions';
+  Future<http.Response> getMissions(int operatorId) async {
+    String url = '$_baseUrl/missions/$operatorId';
     var response = await http.get(Uri.parse(url));
     return response;
   }
@@ -182,6 +188,7 @@ class API {
     // Add the mission data fields
     request.fields['mission_datetime'] = missionData['mission_datetime'];
     request.fields['location_pad'] = missionData['location_pad'];
+    request.fields['status'] = missionData['status'];
     request.fields['drone_id'] = missionData['drone_id'].toString();
 
     // Add the coordinates if they exist
@@ -206,14 +213,33 @@ class API {
     return response;
   }
 
-  Future<http.Response> updateMission(
-      int missionId, Map<String, dynamic> missionData) async {
+  // Future<http.Response> updateMission(
+  //     int missionId, Map<String, dynamic> missionData) async {
+  //   String url = '$_baseUrl/mission/$missionId';
+  //   var response = await http.put(
+  //     Uri.parse(url),
+  //     body: jsonEncode(missionData),
+  //     headers: {"Content-Type": "application/json"},
+  //   );
+  //   return response;
+  // }
+  Future<http.Response> updateMission(int missionId, int status) async {
     String url = '$_baseUrl/mission/$missionId';
+
+    // Define the data to update the mission status
+    Map<String, dynamic> data = {
+      'status': status, // Set the new status to 2
+    };
+
+    // Make the PUT request with the data as the JSON body
     var response = await http.put(
       Uri.parse(url),
-      body: jsonEncode(missionData),
-      headers: {"Content-Type": "application/json"},
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode(data), // Encode the data as JSON
     );
+
     return response;
   }
 
@@ -316,32 +342,24 @@ class API {
       [File? file]) async {
     String url = '$_baseUrl/station/$stationId';
 
+    // Create a MultipartRequest for sending form data
+    var request = http.MultipartRequest('PUT', Uri.parse(url));
+
+    // Add the station data as fields in the multipart request
+    stationData.forEach((key, value) {
+      request.fields[key] = value.toString();
+    });
+
+    // If a file is provided, attach it to the request
     if (file != null) {
-      // If a file is provided, use MultipartRequest for image upload
-      var request = http.MultipartRequest('PUT', Uri.parse(url));
-
-      // Add the station data as fields in the multipart request
-      stationData.forEach((key, value) {
-        request.fields[key] = value.toString();
-      });
-
-      // Attach the image file
       var imageFile =
           await http.MultipartFile.fromPath('location_pad_img', file.path);
       request.files.add(imageFile);
-
-      // Send the multipart request and await the response
-      var streamedResponse = await request.send();
-      return await http.Response.fromStream(streamedResponse);
-    } else {
-      // If no image file is provided, send a simple PUT request with JSON body
-      var response = await http.put(
-        Uri.parse(url),
-        body: jsonEncode(stationData),
-        headers: {"Content-Type": "application/json"},
-      );
-      return response;
     }
+
+    // Send the multipart request and await the response
+    var streamedResponse = await request.send();
+    return await http.Response.fromStream(streamedResponse);
   }
 
   Future<http.Response> deleteStation(int stationId) async {

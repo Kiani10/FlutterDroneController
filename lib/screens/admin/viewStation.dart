@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:dronecontroller/screens/admin/addStation.dart';
 import 'package:dronecontroller/screens/admin/editStation.dart';
 import 'package:flutter/material.dart';
 import 'package:dronecontroller/API/api_handler.dart';
@@ -81,6 +82,34 @@ class _ViewStationsScreenState extends State<ViewStationsScreen> {
                   ),
                 ),
               ],
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 10.0),
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  // Navigate to Add Drone screen
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => AddStationScreen(
+                        adminName: '',
+                      ), // AddDrone screen
+                    ),
+                  ).then((value) {
+                    // Refresh the drone list after returning
+                    _fetchStations();
+                  });
+                },
+                icon: Icon(Icons.add),
+                label: Text("Add Station"),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.amber[800], // Button color
+                  padding: EdgeInsets.symmetric(vertical: 12, horizontal: 20),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
             ),
             Expanded(
               child: _isLoading

@@ -41,13 +41,14 @@ class _LoginPageState extends State<LoginPage> {
 
     // Call the API login function
     try {
-      var response = await api.login({'name': email, 'passwrd': password});
+      var response = await api.login({'email': email, 'passwrd': password});
       if (response.statusCode == 200) {
         var responseData = jsonDecode(response.body); // Decode response JSON
 
         // Extract user data
         String userName = responseData['user']['name'];
         String userRole = responseData['user']['role'];
+        int userId = responseData['user']['id'];
 
         // Check the role and navigate accordingly
         if (userRole == 'admin') {
@@ -64,7 +65,9 @@ class _LoginPageState extends State<LoginPage> {
             context,
             MaterialPageRoute(
               builder: (context) => OperatorDashboard(
-                  operatorName: userName), // Pass operator name
+                operatorName: userName,
+                operatorId: userId,
+              ), // Pass operator name
             ),
           );
         }

@@ -7,7 +7,9 @@ import 'package:image_picker/image_picker.dart';
 
 class AddMissionScreen extends StatefulWidget {
   final String operatorName; // Accept operator name as a parameter
-  const AddMissionScreen({super.key, required this.operatorName});
+  final int operatorId; // Accept operator name as a parameter
+  const AddMissionScreen(
+      {super.key, required this.operatorName, required this.operatorId});
 
   @override
   _AddMissionScreenState createState() => _AddMissionScreenState();
@@ -20,32 +22,28 @@ class _AddMissionScreenState extends State<AddMissionScreen> {
   List<LatLng> _selectedCoordinates = [];
   GoogleMapController? _mapController;
   File? _image;
-  int? _selectedDrone; // Change to store drone ID instead of name
+  int? _selectedDrone;
+  Set<Polyline> _polylines = {};
 
   final ImagePicker _picker = ImagePicker();
-  final List<Map<String, dynamic>> _drones =
-      []; // Store drone objects with both ID and name
+  final List<Map<String, dynamic>> _drones = [];
 
-  API api = API(); // Instantiate the API class.
+  API api = API();
 
   @override
   void initState() {
     super.initState();
-    _fetchDrones(); // Fetch drones from API when the screen is initialized.
+    _fetchDrones();
   }
 
   Future<void> _fetchDrones() async {
     try {
-      var response =
-          await api.getDrones(); // Using the API class to fetch drones.
+      var response = await api.getSpecificDrones(widget.operatorId);
       if (response.statusCode == 200) {
         List<dynamic> droneList = jsonDecode(response.body);
         setState(() {
           _drones.addAll(droneList.map((drone) {
-            return {
-              'id': drone['id'],
-              'name': drone['name']
-            }; // Store drone ID and name
+            return {'id': drone['id'], 'name': drone['name']};
           }).toList());
         });
       } else {
@@ -63,12 +61,28 @@ class _AddMissionScreenState extends State<AddMissionScreen> {
   void _onTap(LatLng location) {
     setState(() {
       _selectedCoordinates.add(location);
+      _updatePolyline();
+    });
+  }
+
+  // Function to update the polyline for drawing the path
+  void _updatePolyline() {
+    final polyline = Polyline(
+      polylineId: PolylineId("mission_path"),
+      points: _selectedCoordinates,
+      color: Colors.blue,
+      width: 4,
+    );
+
+    setState(() {
+      _polylines = {polyline};
     });
   }
 
   void _removeCoordinate(LatLng coordinate) {
     setState(() {
       _selectedCoordinates.remove(coordinate);
+      _updatePolyline();
     });
   }
 
@@ -130,8 +144,7 @@ class _AddMissionScreenState extends State<AddMissionScreen> {
         "${_selectedDate!.toIso8601String().split('T')[0]}";
     String formattedTime =
         "${_selectedTime!.hour.toString().padLeft(2, '0')}:${_selectedTime!.minute.toString().padLeft(2, '0')}:00";
-    String formattedDateTimeFinal =
-        "$formattedDateTime $formattedTime"; // Format the datetime correctly
+    String formattedDateTimeFinal = "$formattedDateTime $formattedTime";
 
     Map<String, dynamic> missionData = {
       "coordinates": _selectedCoordinates
@@ -140,14 +153,14 @@ class _AddMissionScreenState extends State<AddMissionScreen> {
           .toList(),
       "mission_datetime": formattedDateTimeFinal,
       "location_pad": _locationPadController.text,
-      "drone_id": _selectedDrone, // This will now be the drone ID
+      "status": "1",
+      "drone_id": _selectedDrone,
     };
 
     try {
-      var response = await api.createMission(
-          missionData, _image); // Using the API class to create a mission.
+      var response = await api.createMission(missionData, _image);
       if (response.statusCode == 201) {
-        Navigator.of(context).pop(); // Navigate back on success.
+        Navigator.of(context).pop();
       } else {
         _showErrorDialog('Failed to create mission.');
       }
@@ -181,7 +194,7 @@ class _AddMissionScreenState extends State<AddMissionScreen> {
         actions: [
           IconButton(
             icon: Icon(Icons.done),
-            onPressed: _submitMission, // Submit the mission
+            onPressed: _submitMission,
           ),
         ],
       ),
@@ -196,13 +209,13 @@ class _AddMissionScreenState extends State<AddMissionScreen> {
               hint: Text("Select Drone"),
               onChanged: (value) {
                 setState(() {
-                  _selectedDrone = value; // Store the drone ID
+                  _selectedDrone = value;
                 });
               },
               items: _drones.map((drone) {
                 return DropdownMenuItem<int>(
-                  value: drone['id'], // Use the drone ID as the value
-                  child: Text(drone['name']), // Display the drone name
+                  value: drone['id'],
+                  child: Text(drone['name']),
                 );
               }).toList(),
             ),
@@ -225,18 +238,11 @@ class _AddMissionScreenState extends State<AddMissionScreen> {
                 onMapCreated: _onMapCreated,
                 onTap: _onTap,
                 initialCameraPosition: CameraPosition(
-                  target: LatLng(33.6844, 73.0479), // Default to Rawalpindi
+                  target: LatLng(33.6844, 73.0479),
                   zoom: 12,
                 ),
-                markers: _selectedCoordinates.map((coord) {
-                  return Marker(
-                    markerId: MarkerId(coord.toString()),
-                    position: coord,
-                    onTap: () {
-                      _removeCoordinate(coord);
-                    },
-                  );
-                }).toSet(),
+                markers: _buildMarkers(), // Call function to build markers
+                polylines: _polylines,
               ),
             ),
             SizedBox(height: 16),
@@ -269,5 +275,33 @@ class _AddMissionScreenState extends State<AddMissionScreen> {
         ),
       ),
     );
+  }
+
+  // Method to build markers with customized start and end markers
+  Set<Marker> _buildMarkers() {
+    Set<Marker> markers = {};
+
+    for (int i = 0; i < _selectedCoordinates.length; i++) {
+      final coord = _selectedCoordinates[i];
+
+      // Use different marker colors for the first, last, and intermediate markers
+      markers.add(
+        Marker(
+          markerId: MarkerId(coord.toString()),
+          position: coord,
+          icon: i == 0
+              ? BitmapDescriptor.defaultMarkerWithHue(
+                  BitmapDescriptor.hueGreen) // Start marker
+              : i == _selectedCoordinates.length - 1
+                  ? BitmapDescriptor.defaultMarkerWithHue(
+                      BitmapDescriptor.hueRed) // End marker
+                  : BitmapDescriptor.defaultMarker, // Intermediate markers
+          onTap: () {
+            _removeCoordinate(coord);
+          },
+        ),
+      );
+    }
+    return markers;
   }
 }

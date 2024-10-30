@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:dronecontroller/screens/admin/editDrone';
 import 'package:flutter/material.dart';
 import 'package:dronecontroller/API/api_handler.dart';
+import 'package:dronecontroller/screens/admin/addDrone.dart'; // Import AddDrone screen
 
 class ViewDronesScreen extends StatefulWidget {
   const ViewDronesScreen({super.key});
@@ -66,6 +67,7 @@ class _ViewDronesScreenState extends State<ViewDronesScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             SizedBox(height: 40),
+            // Icon and Title
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -84,6 +86,34 @@ class _ViewDronesScreenState extends State<ViewDronesScreen> {
                   ),
                 ),
               ],
+            ),
+            SizedBox(height: 10),
+            // Add Drone Button
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 10.0),
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  // Navigate to Add Drone screen
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => AddDroneScreen(), // AddDrone screen
+                    ),
+                  ).then((value) {
+                    // Refresh the drone list after returning
+                    _fetchDrones();
+                  });
+                },
+                icon: Icon(Icons.add),
+                label: Text("Add Drone"),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.amber[800], // Button color
+                  padding: EdgeInsets.symmetric(vertical: 12, horizontal: 20),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
             ),
             Expanded(
               child: _isLoading
